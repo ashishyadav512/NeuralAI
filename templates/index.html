@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Generate Images - AI Image Generator{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Hero Section -->
+    <div class="row justify-content-center mb-5">
+        <div class="col-lg-8 text-center">
+            <h1 class="display-4 fw-bold text-primary mb-3">
+                Create Stunning Images with AI
+            </h1>
+            <p class="lead text-muted mb-4">
+                Transform your ideas into beautiful images using advanced AI technology. 
+                No limits, no restrictions - generate as many images as you want.
+            </p>
+        </div>
+    </div>
+
+    <!-- Generation Interface -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-lg border-0 generation-card">
+                <div class="card-body p-4">
+                    <form method="POST" action="{{ url_for('generate_image') }}" id="generateForm">
+                        <div class="mb-4">
+                            <label for="prompt" class="form-label fw-semibold text-dark">
+                                <i class="fas fa-pen-fancy me-2 text-primary"></i>
+                                Describe your image
+                            </label>
+                            <textarea 
+                                class="form-control form-control-lg prompt-input" 
+                                id="prompt" 
+                                name="prompt" 
+                                rows="4" 
+                                placeholder="A serene mountain landscape at sunset with vibrant orange and pink skies, reflecting in a crystal clear lake..."
+                                maxlength="500"
+                                required
+                            ></textarea>
+                            <div class="form-text">
+                                <span id="charCount">0</span>/500 characters
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg generate-btn">
+                                <i class="fas fa-magic me-2"></i>
+                                <span class="btn-text">Generate Image</span>
+                                <span class="spinner-border spinner-border-sm ms-2 d-none" role="status" aria-hidden="true"></span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Images Section -->
+    {% if recent_images %}
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="fw-semibold text-dark">
+                    <i class="fas fa-clock me-2 text-secondary"></i>
+                    Recent Creations
+                </h3>
+                <a href="{{ url_for('gallery') }}" class="btn btn-outline-primary">
+                    View All <i class="fas fa-arrow-right ms-1"></i>
+                </a>
+            </div>
+            
+            <div class="row g-4">
+                {% for image in recent_images %}
+                <div class="col-md-6 col-lg-3">
+                    <div class="card image-card h-100 border-0 shadow-sm">
+                        <div class="image-container">
+                            <img 
+                                src="{{ url_for('static', filename='images/' + image.image_filename) }}" 
+                                class="card-img-top" 
+                                alt="Generated image"
+                                loading="lazy"
+                            >
+                            <div class="image-overlay">
+                                <a href="{{ url_for('download_image', image_id=image.id) }}" 
+                                   class="btn btn-light btn-sm">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text text-muted small mb-2">
+                                {{ image.prompt[:80] }}{% if image.prompt|length > 80 %}...{% endif %}
+                            </p>
+                            <small class="text-muted">
+                                <i class="fas fa-clock me-1"></i>
+                                {{ image.created_at.strftime('%b %d, %Y') }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Features Section -->
+    <div class="row mt-5 pt-5 border-top">
+        <div class="col-md-4 text-center mb-4">
+            <div class="feature-icon mb-3">
+                <i class="fas fa-infinity text-primary"></i>
+            </div>
+            <h5 class="fw-semibold">Unlimited Generation</h5>
+            <p class="text-muted">Generate as many images as you want without any restrictions or usage limits.</p>
+        </div>
+        <div class="col-md-4 text-center mb-4">
+            <div class="feature-icon mb-3">
+                <i class="fas fa-bolt text-success"></i>
+            </div>
+            <h5 class="fw-semibold">Fast Processing</h5>
+            <p class="text-muted">Local AI processing ensures quick generation times and complete privacy.</p>
+        </div>
+        <div class="col-md-4 text-center mb-4">
+            <div class="feature-icon mb-3">
+                <i class="fas fa-palette text-accent"></i>
+            </div>
+            <h5 class="fw-semibold">High Quality</h5>
+            <p class="text-muted">Advanced AI models create stunning, high-resolution images from your descriptions.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Character counter for prompt
+    const promptTextarea = document.getElementById('prompt');
+    const charCount = document.getElementById('charCount');
+    
+    promptTextarea.addEventListener('input', function() {
+        charCount.textContent = this.value.length;
+        
+        // Update color based on character count
+        if (this.value.length > 450) {
+            charCount.className = 'text-warning';
+        } else if (this.value.length > 480) {
+            charCount.className = 'text-danger';
+        } else {
+            charCount.className = 'text-muted';
+        }
+    });
+</script>
+{% endblock %}
