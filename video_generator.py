@@ -171,20 +171,53 @@ class FreeVideoGenerator:
             # Get frame dimensions
             height, width = frames[0].size[::-1]  # PIL uses (width, height), OpenCV uses (height, width)
             
-            # Define codec and create VideoWriter with higher quality settings
-            fourcc = cv2.VideoWriter_fourcc(*'avc1')  # YouTube-compatible H.264 codec
-            fps = 15.0  # Higher frame rate for smoother motion
-            out = cv2.VideoWriter(filepath, fourcc, fps, (width, height))
+            # Try multiple codecs for maximum compatibility
+            fourcc_options = ['mp4v', 'XVID', 'MJPG']
+            fps = 15.0
+            out = None
+            
+            for codec in fourcc_options:
+                try:
+                    fourcc = cv2.VideoWriter_fourcc(*codec)
+                    out = cv2.VideoWriter(filepath, fourcc, fps, (width, height))
+                    if out.isOpened():
+                        logging.info(f"Using codec: {codec}")
+                        break
+                    else:
+                        out.release()
+                        out = None
+                except:
+                    if out:
+                        out.release()
+                        out = None
+                    continue
+            
+            if out is None:
+                logging.error("Failed to initialize video writer with any codec")
+                return self._create_fallback_video(prompt)
             
             # Convert frames and write to video
+            frames_written = 0
             for frame in frames:
-                # Convert PIL image to OpenCV format (BGR)
-                frame_array = np.array(frame)
-                frame_bgr = cv2.cvtColor(frame_array, cv2.COLOR_RGB2BGR)
-                out.write(frame_bgr)
+                try:
+                    # Convert PIL image to OpenCV format (BGR)
+                    frame_array = np.array(frame)
+                    frame_bgr = cv2.cvtColor(frame_array, cv2.COLOR_RGB2BGR)
+                    out.write(frame_bgr)
+                    frames_written += 1
+                except Exception as e:
+                    logging.error(f"Error writing frame {frames_written}: {e}")
+                    break
             
             # Release video writer
             out.release()
+            
+            # Verify file was created and has content
+            if not os.path.exists(filepath) or os.path.getsize(filepath) == 0:
+                logging.error(f"Video file not created properly: {filepath}")
+                return self._create_fallback_video(prompt)
+            
+            logging.info(f"Successfully wrote {frames_written} frames to video")
             
             logging.info(f"AI image video created: {filename}")
             return filename
