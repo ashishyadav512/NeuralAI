@@ -15,21 +15,262 @@ class FreeVideoGenerator:
         
     def generate_video(self, prompt):
         """
-        Generate video using free methods
-        Priority: Local GIF generation (fast) -> Pollinations API (backup)
+        Generate video using real AI images with animation effects
+        Priority: AI image + animation -> Simple animation backup
         """
         try:
-            # Method 1: Create animated GIF locally (fast and reliable)
-            result = self._generate_animated_gif(prompt)
+            # Method 1: Generate high-quality AI image first, then animate it
+            result = self._generate_ai_image_video(prompt)
             if result:
                 return result
                 
-            # Method 2: Try simple frame-based approach as backup
+            # Method 2: Fallback to simple animation
             return self._create_simple_video(prompt)
             
         except Exception as e:
             logging.error(f"Error in generate_video: {str(e)}")
             return self._create_fallback_video(prompt)
+    
+    def _generate_ai_image_video(self, prompt):
+        """Generate video by first creating AI image, then animating it"""
+        try:
+            import requests
+            from PIL import Image, ImageEnhance, ImageFilter
+            import io
+            import uuid
+            import math
+            
+            logging.info(f"Generating AI image video for: {prompt[:50]}...")
+            
+            # Step 1: Generate high-quality AI image using Pollinations API
+            base_url = "https://image.pollinations.ai/prompt/"
+            from urllib.parse import quote
+            
+            encoded_prompt = quote(f"{prompt}, high quality, detailed, cinematic")
+            params = {
+                'width': 512,
+                'height': 512,
+                'seed': -1,
+                'nologo': 'true'
+            }
+            
+            full_url = f"{base_url}{encoded_prompt}"
+            
+            logging.info("Generating base AI image...")
+            response = requests.get(full_url, params=params, timeout=20)
+            
+            if response.status_code != 200:
+                logging.warning("AI image generation failed, using fallback")
+                return None
+                
+            # Load the AI-generated base image
+            base_image = Image.open(io.BytesIO(response.content))
+            base_image = base_image.convert('RGB')
+            
+            logging.info("Creating animated frames from AI image...")
+            
+            # Step 2: Create animated frames with effects on the AI image
+            frames = []
+            frame_count = 12  # More frames for smoother animation
+            
+            for frame_num in range(frame_count):
+                # Copy the base AI image
+                frame = base_image.copy()
+                
+                # Animation progress (0 to 1)
+                progress = frame_num / frame_count
+                
+                # Apply different animation effects based on prompt content
+                if any(word in prompt.lower() for word in ['fire', 'flame', 'burning', 'dragon']):
+                    frame = self._apply_fire_effect(frame, progress)
+                elif any(word in prompt.lower() for word in ['water', 'ocean', 'wave', 'rain', 'sea']):
+                    frame = self._apply_water_effect(frame, progress)
+                elif any(word in prompt.lower() for word in ['wind', 'flying', 'moving', 'floating', 'car', 'running']):
+                    frame = self._apply_motion_effect(frame, progress)
+                elif any(word in prompt.lower() for word in ['magic', 'spell', 'glow', 'energy', 'fantasy', 'warrior', 'armor', 'sword']):
+                    frame = self._apply_glow_effect(frame, progress)
+                elif any(word in prompt.lower() for word in ['night', 'dark', 'moon', 'stars', 'city']):
+                    frame = self._apply_night_effect(frame, progress)
+                elif any(word in prompt.lower() for word in ['portrait', 'face', 'person', 'girl', 'boy', 'man', 'woman']):
+                    frame = self._apply_portrait_effect(frame, progress)
+                else:
+                    # Default subtle animation - breathing/pulsing effect
+                    frame = self._apply_breathing_effect(frame, progress)
+                
+                frames.append(frame)
+            
+            # Step 3: Save as animated GIF
+            filename = f"ai_video_{uuid.uuid4().hex[:8]}.gif"
+            filepath = os.path.join(self.videos_dir, filename)
+            
+            frames[0].save(
+                filepath,
+                save_all=True,
+                append_images=frames[1:],
+                duration=200,  # 200ms per frame for smooth animation
+                loop=0
+            )
+            
+            logging.info(f"AI image video created: {filename}")
+            return filename
+            
+        except Exception as e:
+            logging.error(f"AI image video generation failed: {str(e)}")
+            return None
+    
+    def _apply_breathing_effect(self, image, progress):
+        """Apply subtle breathing/pulsing effect"""
+        try:
+            import math
+            from PIL import Image, ImageEnhance
+            
+            # Subtle zoom in/out effect
+            scale_factor = 1.0 + math.sin(progress * 2 * math.pi) * 0.02
+            
+            width, height = image.size
+            new_width = int(width * scale_factor)
+            new_height = int(height * scale_factor)
+            
+            # Resize image
+            resized = image.resize((new_width, new_height), Image.Resampling.LANCZOS)
+            
+            # Center crop back to original size
+            left = (new_width - width) // 2
+            top = (new_height - height) // 2
+            result = resized.crop((left, top, left + width, top + height))
+            
+            # Subtle brightness variation
+            brightness = 1.0 + math.sin(progress * 2 * math.pi) * 0.05
+            enhancer = ImageEnhance.Brightness(result)
+            result = enhancer.enhance(brightness)
+            
+            return result
+        except:
+            return image
+    
+    def _apply_glow_effect(self, image, progress):
+        """Apply magical glow effect"""
+        try:
+            import math
+            from PIL import ImageEnhance, ImageFilter
+            
+            # Create glowing effect with brightness and blur
+            brightness = 1.1 + math.sin(progress * 4 * math.pi) * 0.15
+            
+            # Enhance brightness
+            enhancer = ImageEnhance.Brightness(image)
+            bright_image = enhancer.enhance(brightness)
+            
+            # Add subtle blur for glow
+            if brightness > 1.1:
+                blur_radius = (brightness - 1.0) * 2
+                bright_image = bright_image.filter(ImageFilter.GaussianBlur(radius=blur_radius))
+            
+            return bright_image
+        except:
+            return image
+    
+    def _apply_motion_effect(self, image, progress):
+        """Apply motion blur effect"""
+        try:
+            import math
+            from PIL import ImageFilter, Image as PILImage
+            
+            # Subtle motion blur effect
+            motion_intensity = abs(math.sin(progress * 4 * math.pi)) * 1.5
+            
+            if motion_intensity > 0.5:
+                # Apply motion blur
+                blurred = image.filter(ImageFilter.BLUR)
+                # Blend original with blurred
+                from PIL import Image as PILImage
+                result = PILImage.blend(image, blurred, motion_intensity * 0.3)
+                return result
+            
+            return image
+        except:
+            return image
+    
+    def _apply_fire_effect(self, image, progress):
+        """Apply fire-like flickering effect"""
+        try:
+            import math
+            from PIL import ImageEnhance
+            
+            # Flickering brightness and color temperature
+            flicker = 1.0 + math.sin(progress * 8 * math.pi) * 0.1 + math.sin(progress * 12 * math.pi) * 0.05
+            
+            # Enhance brightness with flicker
+            enhancer = ImageEnhance.Brightness(image)
+            result = enhancer.enhance(flicker)
+            
+            # Add warmth (increase red/yellow tones)
+            enhancer = ImageEnhance.Color(result)
+            result = enhancer.enhance(1.1 + flicker * 0.1)
+            
+            return result
+        except:
+            return image
+    
+    def _apply_water_effect(self, image, progress):
+        """Apply water-like ripple effect"""
+        try:
+            # Subtle horizontal wave distortion simulation
+            brightness = 1.0 + math.sin(progress * 3 * math.pi) * 0.03
+            
+            # Apply brightness wave
+            enhancer = ImageEnhance.Brightness(image)
+            result = enhancer.enhance(brightness)
+            
+            # Add subtle blue tint
+            enhancer = ImageEnhance.Color(result)
+            result = enhancer.enhance(1.05)
+            
+            return result
+        except:
+            return image
+    
+    def _apply_night_effect(self, image, progress):
+        """Apply night scene effect with twinkling"""
+        try:
+            import math
+            from PIL import ImageEnhance
+            
+            # Subtle brightness variation like twinkling stars
+            twinkle = 1.0 + math.sin(progress * 6 * math.pi) * 0.08 + math.sin(progress * 10 * math.pi) * 0.04
+            
+            # Apply brightness variation
+            enhancer = ImageEnhance.Brightness(image)
+            result = enhancer.enhance(twinkle)
+            
+            # Slightly increase contrast for night effect
+            enhancer = ImageEnhance.Contrast(result)
+            result = enhancer.enhance(1.05)
+            
+            return result
+        except:
+            return image
+    
+    def _apply_portrait_effect(self, image, progress):
+        """Apply subtle portrait animation effect"""
+        try:
+            import math
+            from PIL import ImageEnhance
+            
+            # Very subtle breathing effect for portraits
+            brightness = 1.0 + math.sin(progress * 2 * math.pi) * 0.03
+            
+            # Apply subtle brightness change
+            enhancer = ImageEnhance.Brightness(image)
+            result = enhancer.enhance(brightness)
+            
+            # Slight color enhancement
+            enhancer = ImageEnhance.Color(result)
+            result = enhancer.enhance(1.02)
+            
+            return result
+        except:
+            return image
     
     def _create_simple_video(self, prompt):
         """Create a simple video using basic animation"""
