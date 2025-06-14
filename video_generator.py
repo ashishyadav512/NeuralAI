@@ -215,6 +215,9 @@ class FreeVideoGenerator:
     def _apply_water_effect(self, image, progress):
         """Apply water-like ripple effect"""
         try:
+            import math
+            from PIL import ImageEnhance
+            
             # Subtle horizontal wave distortion simulation
             brightness = 1.0 + math.sin(progress * 3 * math.pi) * 0.03
             
