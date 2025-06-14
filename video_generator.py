@@ -48,8 +48,8 @@ class FreeVideoGenerator:
             
             encoded_prompt = quote(f"{prompt}, high quality, detailed, cinematic")
             params = {
-                'width': 512,
-                'height': 512,
+                'width': 1024,
+                'height': 1024,
                 'seed': -1,
                 'nologo': 'true'
             }
@@ -96,9 +96,9 @@ class FreeVideoGenerator:
                 except:
                     action_images.append(base_image.copy())
             
-            # Step 3: Create ultra-smooth transitions with more frames
+            # Step 3: Create ultra-smooth transitions with more frames for longer videos
             frames = []
-            frame_count = 30  # Increased frames for YouTube-quality smoothness
+            frame_count = 90  # Much longer video - 6 seconds at 15 FPS
             
             logging.info("Creating ultra-smooth motion sequence...")
             
@@ -219,8 +219,12 @@ class FreeVideoGenerator:
             
             logging.info(f"Successfully wrote {frames_written} frames to video")
             
-            logging.info(f"AI image video created: {filename}")
-            return filename
+            # Step 4: Add background music to the video
+            logging.info("Adding background music to video...")
+            final_filename = self._add_background_music(filepath, prompt)
+            
+            logging.info(f"AI image video with music created: {final_filename}")
+            return final_filename
             
         except Exception as e:
             logging.error(f"AI image video generation failed: {str(e)}")
@@ -1187,6 +1191,193 @@ class FreeVideoGenerator:
                 particle_x + size, particle_y + size
             ], fill=(255, 255, 255, alpha))
     
+    def _add_background_music(self, video_path, prompt):
+        """Add appropriate background music to the video"""
+        try:
+            import numpy as np
+            from moviepy.editor import VideoFileClip, AudioFileClip, CompositeAudioClip
+            import math
+            
+            # Generate background music based on prompt mood
+            music_filename = self._generate_background_music(prompt)
+            
+            if music_filename:
+                # Load video and audio
+                video = VideoFileClip(video_path)
+                audio = AudioFileClip(os.path.join(self.videos_dir, music_filename))
+                
+                # Adjust audio length to match video
+                if audio.duration > video.duration:
+                    audio = audio.subclip(0, video.duration)
+                else:
+                    # Loop audio if it's shorter than video
+                    loops_needed = math.ceil(video.duration / audio.duration)
+                    audio_list = [audio] * loops_needed
+                    audio = CompositeAudioClip(audio_list).subclip(0, video.duration)
+                
+                # Set volume to 30% for background music
+                audio = audio.volumex(0.3)
+                
+                # Combine video with audio
+                final_video = video.set_audio(audio)
+                
+                # Save new video with music
+                music_video_filename = video_path.replace('.mp4', '_with_music.mp4')
+                final_video.write_videofile(music_video_filename, codec='libx264', audio_codec='aac', verbose=False, logger=None)
+                
+                # Clean up
+                video.close()
+                audio.close()
+                final_video.close()
+                
+                return os.path.basename(music_video_filename)
+            
+            return os.path.basename(video_path)
+            
+        except Exception as e:
+            logging.error(f"Failed to add background music: {str(e)}")
+            return os.path.basename(video_path)
+    
+    def _generate_background_music(self, prompt):
+        """Generate background music based on prompt mood"""
+        try:
+            import numpy as np
+            from scipy.io.wavfile import write
+            
+            # Analyze prompt for mood
+            prompt_lower = prompt.lower()
+            
+            # Determine music style based on content
+            if any(word in prompt_lower for word in ['dancing', 'party', 'celebration', 'joyful']):
+                return self._create_upbeat_music()
+            elif any(word in prompt_lower for word in ['peaceful', 'calm', 'meditation', 'waterfall', 'nature']):
+                return self._create_peaceful_music()
+            elif any(word in prompt_lower for word in ['action', 'fighting', 'adventure', 'cutting']):
+                return self._create_dramatic_music()
+            else:
+                return self._create_gentle_music()
+                
+        except Exception as e:
+            logging.error(f"Music generation failed: {str(e)}")
+            return None
+    
+    def _create_upbeat_music(self):
+        """Create upbeat dance music"""
+        try:
+            import numpy as np
+            from scipy.io.wavfile import write
+            
+            duration = 8  # seconds
+            sample_rate = 44100
+            t = np.linspace(0, duration, int(sample_rate * duration), False)
+            
+            # Create upbeat rhythm with multiple harmonics
+            frequency = 120  # BPM converted to Hz
+            music = np.sin(2 * np.pi * frequency * t) * 0.3
+            music += np.sin(2 * np.pi * frequency * 2 * t) * 0.2
+            music += np.sin(2 * np.pi * frequency * 3 * t) * 0.1
+            
+            # Add drum-like beat
+            beat = np.sin(2 * np.pi * 2 * t) * 0.4
+            music += beat
+            
+            # Apply envelope for natural sound
+            envelope = np.exp(-t * 0.1)
+            music *= envelope
+            
+            filename = "upbeat_music.wav"
+            filepath = os.path.join(self.videos_dir, filename)
+            write(filepath, sample_rate, (music * 32767).astype(np.int16))
+            
+            return filename
+            
+        except Exception as e:
+            logging.error(f"Upbeat music creation failed: {str(e)}")
+            return None
+    
+    def _create_peaceful_music(self):
+        """Create peaceful ambient music"""
+        try:
+            import numpy as np
+            from scipy.io.wavfile import write
+            
+            duration = 8
+            sample_rate = 44100
+            t = np.linspace(0, duration, int(sample_rate * duration), False)
+            
+            # Create peaceful tones
+            music = np.sin(2 * np.pi * 60 * t) * 0.3  # Low frequency
+            music += np.sin(2 * np.pi * 90 * t) * 0.2  # Harmonic
+            music += np.sin(2 * np.pi * 45 * t) * 0.1  # Sub-harmonic
+            
+            # Add gentle waves effect
+            waves = np.sin(2 * np.pi * 0.5 * t) * 0.1
+            music += waves
+            
+            filename = "peaceful_music.wav"
+            filepath = os.path.join(self.videos_dir, filename)
+            write(filepath, sample_rate, (music * 32767).astype(np.int16))
+            
+            return filename
+            
+        except Exception as e:
+            logging.error(f"Peaceful music creation failed: {str(e)}")
+            return None
+    
+    def _create_dramatic_music(self):
+        """Create dramatic action music"""
+        try:
+            import numpy as np
+            from scipy.io.wavfile import write
+            
+            duration = 8
+            sample_rate = 44100
+            t = np.linspace(0, duration, int(sample_rate * duration), False)
+            
+            # Create dramatic rising tones
+            music = np.sin(2 * np.pi * 80 * t) * 0.4
+            music += np.sin(2 * np.pi * 120 * t) * 0.3
+            music += np.sin(2 * np.pi * 160 * t) * 0.2
+            
+            # Add intensity build-up
+            intensity = t / duration  # Gradually increase
+            music *= intensity
+            
+            filename = "dramatic_music.wav"
+            filepath = os.path.join(self.videos_dir, filename)
+            write(filepath, sample_rate, (music * 32767).astype(np.int16))
+            
+            return filename
+            
+        except Exception as e:
+            logging.error(f"Dramatic music creation failed: {str(e)}")
+            return None
+    
+    def _create_gentle_music(self):
+        """Create gentle background music"""
+        try:
+            import numpy as np
+            from scipy.io.wavfile import write
+            
+            duration = 8
+            sample_rate = 44100
+            t = np.linspace(0, duration, int(sample_rate * duration), False)
+            
+            # Create gentle melody
+            music = np.sin(2 * np.pi * 70 * t) * 0.3
+            music += np.sin(2 * np.pi * 105 * t) * 0.2
+            music += np.sin(2 * np.pi * 140 * t) * 0.1
+            
+            filename = "gentle_music.wav"
+            filepath = os.path.join(self.videos_dir, filename)
+            write(filepath, sample_rate, (music * 32767).astype(np.int16))
+            
+            return filename
+            
+        except Exception as e:
+            logging.error(f"Gentle music creation failed: {str(e)}")
+            return None
+
     def _create_fallback_video(self, prompt):
         """Create simple fallback video"""
         try:
