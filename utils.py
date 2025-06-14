@@ -4,6 +4,7 @@ import random
 import logging
 from datetime import datetime
 import shutil
+from image_generator import FreeImageGenerator
 
 def validate_prompt(prompt):
     """
@@ -39,60 +40,35 @@ def validate_prompt(prompt):
     
     return True
 
-def generate_image_mock(prompt):
+def generate_image_real(prompt):
     """
-    Mock image generation function - returns a placeholder image filename
-    In production, this would be replaced with actual AI model integration
+    Real image generation function using free AI models
     
     Args:
         prompt (str): The text prompt for image generation
         
     Returns:
-        str: The filename of the generated/placeholder image
+        str: The filename of the generated image
     """
     try:
         # Log the generation request
-        logging.info(f"Generating image for prompt: {prompt[:50]}...")
+        logging.info(f"Generating real AI image for prompt: {prompt[:50]}...")
         
-        # For MVP, return one of the placeholder images randomly
-        placeholder_images = [
-            'placeholder-1.svg',
-            'placeholder-2.svg', 
-            'placeholder-3.svg',
-            'placeholder-4.svg'
-        ]
+        # Initialize the free image generator
+        generator = FreeImageGenerator()
         
-        # Select a random placeholder
-        selected_image = random.choice(placeholder_images)
+        # Generate the image using free AI services
+        filename = generator.generate_image(prompt)
         
-        # In a real implementation, you would:
-        # 1. Process the prompt through an AI model (Stable Diffusion, etc.)
-        # 2. Generate the actual image
-        # 3. Save it with a unique filename
-        # 4. Return the filename
-        
-        # For now, we'll copy the placeholder to a unique filename
-        unique_filename = f"generated_{uuid.uuid4().hex[:8]}_{selected_image}"
-        
-        # Ensure the static/images directory exists
-        images_dir = os.path.join('static', 'images')
-        os.makedirs(images_dir, exist_ok=True)
-        
-        # Copy placeholder to unique filename (simulating generation)
-        source_path = os.path.join(images_dir, selected_image)
-        dest_path = os.path.join(images_dir, unique_filename)
-        
-        if os.path.exists(source_path):
-            shutil.copy2(source_path, dest_path)
+        if filename:
+            logging.info(f"AI image generated successfully: {filename}")
+            return filename
         else:
-            # If placeholder doesn't exist, create a simple SVG
-            create_fallback_image(dest_path, prompt)
-        
-        logging.info(f"Image generated successfully: {unique_filename}")
-        return unique_filename
+            logging.warning("Image generation failed, creating fallback")
+            return create_fallback_image_filename(prompt)
         
     except Exception as e:
-        logging.error(f"Error in generate_image_mock: {str(e)}")
+        logging.error(f"Error in generate_image_real: {str(e)}")
         # Return a fallback image filename
         return create_fallback_image_filename(prompt)
 

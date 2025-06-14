@@ -3,7 +3,7 @@ import logging
 from flask import render_template, request, redirect, url_for, flash, jsonify, send_file
 from app import app, db
 from models import GeneratedImage
-from utils import generate_image_mock, validate_prompt
+from utils import generate_image_real, validate_prompt
 from datetime import datetime
 
 @app.route('/')
@@ -23,9 +23,9 @@ def generate_image():
             flash('Please enter a valid prompt (3-500 characters)', 'error')
             return redirect(url_for('index'))
         
-        # Generate image (mocked for MVP)
+        # Generate image using real AI models
         start_time = datetime.now()
-        image_filename = generate_image_mock(prompt)
+        image_filename = generate_image_real(prompt)
         end_time = datetime.now()
         generation_time = int((end_time - start_time).total_seconds())
         
