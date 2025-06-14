@@ -69,9 +69,11 @@ class FreeVideoGenerator:
             
             logging.info("Creating animated frames from AI image...")
             
-            # Step 2: Create animated frames with effects on the AI image
+            # Step 2: Create video-like sequence with single AI image and advanced effects
             frames = []
-            frame_count = 12  # More frames for smoother animation
+            frame_count = 24  # More frames for smoother, longer video
+            
+            logging.info("Creating cinematic video sequence from AI image...")
             
             for frame_num in range(frame_count):
                 # Copy the base AI image
@@ -79,6 +81,11 @@ class FreeVideoGenerator:
                 
                 # Animation progress (0 to 1)
                 progress = frame_num / frame_count
+                
+                # Apply cinematic camera effects to simulate video movement
+                frame = self._apply_camera_movement(frame, progress, prompt)
+                
+                # Apply context-specific animation effects
                 
                 # Apply different animation effects based on prompt content
                 if any(word in prompt.lower() for word in ['fire', 'flame', 'burning', 'dragon']):
@@ -107,7 +114,7 @@ class FreeVideoGenerator:
                 filepath,
                 save_all=True,
                 append_images=frames[1:],
-                duration=200,  # 200ms per frame for smooth animation
+                duration=150,  # 150ms per frame for faster video feel
                 loop=0
             )
             
@@ -117,6 +124,14 @@ class FreeVideoGenerator:
         except Exception as e:
             logging.error(f"AI image video generation failed: {str(e)}")
             return None
+    
+    def _blend_images(self, image1, image2, alpha):
+        """Blend two images together for smooth transitions"""
+        try:
+            from PIL import Image as PILImage
+            return PILImage.blend(image1, image2, 1.0 - alpha)
+        except:
+            return image1
     
     def _apply_breathing_effect(self, image, progress):
         """Apply subtle breathing/pulsing effect"""
