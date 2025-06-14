@@ -78,23 +78,39 @@ class FreeVideoGenerator:
             # Generate only key action images (reduced from full sequence for speed)
             action_images = [base_image]  # Start with base image
             
-            # Generate only the most critical action stage for motion
-            if action_prompts and len(action_prompts) > 1:
-                # Choose the most dynamic action frame (usually middle of sequence)
-                key_action_prompt = action_prompts[len(action_prompts) // 2]
-                logging.info(f"Generating key action frame: {key_action_prompt[:50]}...")
+            # Generate MULTIPLE distinct action frames for true motion sequences
+            logging.info("Generating multiple action sequence frames for realistic motion...")
+            
+            # Generate only 2-3 critical motion frames for optimal performance
+            if action_prompts:
+                max_frames = min(3, len(action_prompts))
+                for i in range(1, max_frames):  # Skip first frame, generate 2-3 key motion frames
+                    if i >= len(action_prompts):
+                        break
+                    
+                action_prompt = action_prompts[i]
+                logging.info(f"Generating motion frame {i}: {action_prompt[:60]}...")
                 
                 try:
-                    encoded_action = quote(f"{key_action_prompt}, high quality, detailed, cinematic")
+                    encoded_action = quote(f"{action_prompt}, high quality, detailed, cinematic, dynamic motion")
                     response = requests.get(f"{base_url}{encoded_action}", params=params, timeout=12)
                     
                     if response.status_code == 200:
                         action_image = Image.open(io.BytesIO(response.content)).convert('RGB')
                         action_images.append(action_image)
+                        logging.info(f"Successfully generated motion frame {i}")
                     else:
-                        action_images.append(base_image.copy())
-                except:
-                    action_images.append(base_image.copy())
+                        logging.warning(f"Failed to generate frame {i}, using enhanced base image")
+                        # Create a variation of base image with motion blur for fallback
+                        enhanced_base = self._create_motion_variant(base_image, i)
+                        action_images.append(enhanced_base)
+                except Exception as e:
+                    logging.warning(f"Error generating frame {i}: {str(e)}")
+                    # Create motion variant as fallback
+                    enhanced_base = self._create_motion_variant(base_image, i)
+                    action_images.append(enhanced_base)
+            
+            logging.info(f"Generated {len(action_images)} distinct motion frames")
             
             # Step 3: Create ultra-smooth transitions with more frames for longer videos
             frames = []
@@ -340,6 +356,31 @@ class FreeVideoGenerator:
         except:
             return image
     
+    def _create_motion_variant(self, base_image, variant_index):
+        """Create motion variants of base image for fallback"""
+        try:
+            from PIL import ImageEnhance, ImageFilter
+            
+            # Apply different transformations based on variant index
+            if variant_index == 1:
+                # Add motion blur and slight brightness boost
+                blurred = base_image.filter(ImageFilter.BLUR)
+                enhancer = ImageEnhance.Brightness(blurred)
+                return enhancer.enhance(1.1)
+            elif variant_index == 2:
+                # Add color enhancement and sharpness
+                enhancer = ImageEnhance.Color(base_image)
+                enhanced = enhancer.enhance(1.2)
+                sharpener = ImageEnhance.Sharpness(enhanced)
+                return sharpener.enhance(1.1)
+            else:
+                # Add contrast enhancement
+                enhancer = ImageEnhance.Contrast(base_image)
+                return enhancer.enhance(1.1)
+                
+        except:
+            return base_image.copy()
+    
     def _generate_action_sequence_prompts(self, original_prompt):
         """Generate sequence of prompts for different action stages"""
         prompt_lower = original_prompt.lower()
@@ -370,6 +411,24 @@ class FreeVideoGenerator:
             ]
         
         elif any(word in prompt_lower for word in ['dancing', 'dance']):
+            return [
+                f"{original_prompt}, beginning dance pose with arms at sides",
+                f"{original_prompt}, arms raised gracefully, starting to move",
+                f"{original_prompt}, spinning with dress flowing, mid-twirl motion",
+                f"{original_prompt}, arms extended, one leg lifted in dance position",
+                f"{original_prompt}, head tilted back, arms flowing, peak dance moment",
+                f"{original_prompt}, completing spin, arms coming down gracefully"
+            ]
+        
+        elif any(word in prompt_lower for word in ['waterfall', 'water']):
+            return [
+                f"{original_prompt}, approaching the water's edge",
+                f"{original_prompt}, stepping into water, creating splash",
+                f"{original_prompt}, hands reaching toward falling water",
+                f"{original_prompt}, water droplets around her, arms raised",
+                f"{original_prompt}, spinning in shallow water, creating ripples",
+                f"{original_prompt}, laughing with water drops sparkling around"
+            ]
             return [
                 f"{original_prompt}, starting dance pose",
                 f"{original_prompt}, arms extended in dance move",
