@@ -2,15 +2,16 @@ import os
 import logging
 from flask import render_template, request, redirect, url_for, flash, jsonify, send_file
 from app import app, db
-from models import GeneratedImage
-from utils import generate_image_real, validate_prompt
+from models import GeneratedImage, GeneratedVideo
+from utils import generate_image_real, generate_video_real, validate_prompt
 from datetime import datetime
 
 @app.route('/')
 def index():
-    """Main page with image generation interface"""
+    """Main page with image and video generation interface"""
     recent_images = GeneratedImage.query.order_by(GeneratedImage.created_at.desc()).limit(4).all()
-    return render_template('index.html', recent_images=recent_images)
+    recent_videos = GeneratedVideo.query.order_by(GeneratedVideo.created_at.desc()).limit(4).all()
+    return render_template('index.html', recent_images=recent_images, recent_videos=recent_videos)
 
 @app.route('/generate', methods=['POST'])
 def generate_image():
@@ -46,6 +47,45 @@ def generate_image():
         flash('An error occurred while generating the image. Please try again.', 'error')
         return redirect(url_for('index'))
 
+@app.route('/generate_video', methods=['POST'])
+def generate_video():
+    """Handle video generation requests"""
+    try:
+        prompt = request.form.get('prompt', '').strip()
+        
+        # Validate prompt
+        if not validate_prompt(prompt):
+            flash('Please enter a valid prompt (3-500 characters)', 'error')
+            return redirect(url_for('index'))
+        
+        # Generate video using real AI models
+        start_time = datetime.now()
+        video_filename = generate_video_real(prompt)
+        end_time = datetime.now()
+        generation_time = int((end_time - start_time).total_seconds())
+        
+        if video_filename:
+            # Save to database
+            new_video = GeneratedVideo(
+                prompt=prompt,
+                video_filename=video_filename,
+                generation_time=generation_time,
+                duration=5  # Default 5 seconds for GIFs
+            )
+            db.session.add(new_video)
+            db.session.commit()
+            
+            flash(f'Video generated successfully in {generation_time} seconds!', 'success')
+            return redirect(url_for('video_gallery'))
+        else:
+            flash('Video generation failed. Please try again.', 'error')
+            return redirect(url_for('index'))
+        
+    except Exception as e:
+        logging.error(f'Error generating video: {str(e)}')
+        flash('An error occurred while generating the video. Please try again.', 'error')
+        return redirect(url_for('index'))
+
 @app.route('/gallery')
 def gallery():
     """Display gallery of generated images"""
@@ -57,6 +97,18 @@ def gallery():
     )
     
     return render_template('gallery.html', images=images)
+
+@app.route('/video_gallery')
+def video_gallery():
+    """Display gallery of generated videos"""
+    page = request.args.get('page', 1, type=int)
+    per_page = 12  # Videos per page
+    
+    videos = GeneratedVideo.query.order_by(GeneratedVideo.created_at.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+    
+    return render_template('video_gallery.html', videos=videos)
 
 @app.route('/download/<int:image_id>')
 def download_image(image_id):

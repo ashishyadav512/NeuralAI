@@ -5,6 +5,7 @@ import logging
 from datetime import datetime
 import shutil
 from image_generator import FreeImageGenerator
+from video_generator import FreeVideoGenerator
 
 def validate_prompt(prompt):
     """
@@ -71,6 +72,37 @@ def generate_image_real(prompt):
         logging.error(f"Error in generate_image_real: {str(e)}")
         # Return a fallback image filename
         return create_fallback_image_filename(prompt)
+
+def generate_video_real(prompt):
+    """
+    Real video generation function using free AI models
+    
+    Args:
+        prompt (str): The text prompt for video generation
+        
+    Returns:
+        str: The filename of the generated video
+    """
+    try:
+        # Log the generation request
+        logging.info(f"Generating real AI video for prompt: {prompt[:50]}...")
+        
+        # Initialize the free video generator
+        generator = FreeVideoGenerator()
+        
+        # Generate the video using free AI services
+        filename = generator.generate_video(prompt)
+        
+        if filename:
+            logging.info(f"AI video generated successfully: {filename}")
+            return filename
+        else:
+            logging.warning("Video generation failed")
+            return None
+        
+    except Exception as e:
+        logging.error(f"Error in generate_video_real: {str(e)}")
+        return None
 
 def create_fallback_image(filepath, prompt):
     """

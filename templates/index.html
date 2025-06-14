@@ -19,18 +19,34 @@
 
     <!-- Generation Interface -->
     <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <div class="card shadow-lg border-0 generation-card">
+        <div class="col-lg-10">
+            <!-- Generation Type Selector -->
+            <div class="text-center mb-4">
+                <div class="btn-group generation-type-selector" role="group">
+                    <input type="radio" class="btn-check" name="generationType" id="imageType" autocomplete="off" checked>
+                    <label class="btn btn-outline-primary" for="imageType">
+                        <i class="fas fa-image me-2"></i>Generate Images
+                    </label>
+                    
+                    <input type="radio" class="btn-check" name="generationType" id="videoType" autocomplete="off">
+                    <label class="btn btn-outline-primary" for="videoType">
+                        <i class="fas fa-video me-2"></i>Generate Videos
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Image Generation Form -->
+            <div class="card shadow-lg border-0 generation-card" id="imageGenerationCard">
                 <div class="card-body p-4">
-                    <form method="POST" action="{{ url_for('generate_image') }}" id="generateForm">
+                    <form method="POST" action="{{ url_for('generate_image') }}" id="generateImageForm">
                         <div class="mb-4">
-                            <label for="prompt" class="form-label fw-semibold text-dark">
+                            <label for="imagePrompt" class="form-label fw-semibold text-dark">
                                 <i class="fas fa-pen-fancy me-2 text-primary"></i>
                                 Describe your image
                             </label>
                             <textarea 
                                 class="form-control form-control-lg prompt-input" 
-                                id="prompt" 
+                                id="imagePrompt" 
                                 name="prompt" 
                                 rows="4" 
                                 placeholder="A serene mountain landscape at sunset with vibrant orange and pink skies, reflecting in a crystal clear lake..."
@@ -38,7 +54,7 @@
                                 required
                             ></textarea>
                             <div class="form-text">
-                                <span id="charCount">0</span>/500 characters
+                                <span id="imageCharCount">0</span>/500 characters
                             </div>
                         </div>
                         
@@ -46,6 +62,45 @@
                             <button type="submit" class="btn btn-primary btn-lg generate-btn">
                                 <i class="fas fa-magic me-2"></i>
                                 <span class="btn-text">Generate Image</span>
+                                <span class="spinner-border spinner-border-sm ms-2 d-none" role="status" aria-hidden="true"></span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Video Generation Form -->
+            <div class="card shadow-lg border-0 generation-card d-none" id="videoGenerationCard">
+                <div class="card-body p-4">
+                    <form method="POST" action="{{ url_for('generate_video') }}" id="generateVideoForm">
+                        <div class="mb-4">
+                            <label for="videoPrompt" class="form-label fw-semibold text-dark">
+                                <i class="fas fa-video me-2 text-accent"></i>
+                                Describe your video
+                            </label>
+                            <textarea 
+                                class="form-control form-control-lg prompt-input" 
+                                id="videoPrompt" 
+                                name="prompt" 
+                                rows="4" 
+                                placeholder="A cat gracefully jumping through a field of flowers, slow motion, cinematic lighting..."
+                                maxlength="500"
+                                required
+                            ></textarea>
+                            <div class="form-text">
+                                <span id="videoCharCount">0</span>/500 characters
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Videos are generated as animated GIFs (5-10 seconds). For best results, describe motion and action.
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-accent btn-lg generate-btn">
+                                <i class="fas fa-play me-2"></i>
+                                <span class="btn-text">Generate Video</span>
                                 <span class="spinner-border spinner-border-sm ms-2 d-none" role="status" aria-hidden="true"></span>
                             </button>
                         </div>
