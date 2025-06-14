@@ -188,21 +188,71 @@
 
 {% block scripts %}
 <script>
-    // Character counter for prompt
-    const promptTextarea = document.getElementById('prompt');
-    const charCount = document.getElementById('charCount');
+    // Generation type switcher
+    const imageTypeRadio = document.getElementById('imageType');
+    const videoTypeRadio = document.getElementById('videoType');
+    const imageCard = document.getElementById('imageGenerationCard');
+    const videoCard = document.getElementById('videoGenerationCard');
     
-    promptTextarea.addEventListener('input', function() {
-        charCount.textContent = this.value.length;
-        
-        // Update color based on character count
-        if (this.value.length > 450) {
-            charCount.className = 'text-warning';
-        } else if (this.value.length > 480) {
-            charCount.className = 'text-danger';
-        } else {
-            charCount.className = 'text-muted';
+    // Handle type switching
+    imageTypeRadio.addEventListener('change', function() {
+        if (this.checked) {
+            imageCard.classList.remove('d-none');
+            videoCard.classList.add('d-none');
         }
+    });
+    
+    videoTypeRadio.addEventListener('change', function() {
+        if (this.checked) {
+            videoCard.classList.remove('d-none');
+            imageCard.classList.add('d-none');
+        }
+    });
+    
+    // Character counters
+    function setupCharacterCounter(textareaId, counterId) {
+        const textarea = document.getElementById(textareaId);
+        const counter = document.getElementById(counterId);
+        
+        if (textarea && counter) {
+            textarea.addEventListener('input', function() {
+                const length = this.value.length;
+                counter.textContent = length;
+                
+                if (length > 450) {
+                    counter.className = 'text-warning';
+                } else if (length > 480) {
+                    counter.className = 'text-danger';
+                } else {
+                    counter.className = 'text-muted';
+                }
+            });
+        }
+    }
+    
+    // Setup character counters for both forms
+    setupCharacterCounter('imagePrompt', 'imageCharCount');
+    setupCharacterCounter('videoPrompt', 'videoCharCount');
+    
+    // Form submission handling
+    document.getElementById('generateImageForm').addEventListener('submit', function(e) {
+        const button = this.querySelector('.generate-btn');
+        const spinner = button.querySelector('.spinner-border');
+        const text = button.querySelector('.btn-text');
+        
+        button.disabled = true;
+        spinner.classList.remove('d-none');
+        text.textContent = 'Generating Image...';
+    });
+    
+    document.getElementById('generateVideoForm').addEventListener('submit', function(e) {
+        const button = this.querySelector('.generate-btn');
+        const spinner = button.querySelector('.spinner-border');
+        const text = button.querySelector('.btn-text');
+        
+        button.disabled = true;
+        spinner.classList.remove('d-none');
+        text.textContent = 'Generating Video...';
     });
 </script>
 {% endblock %}

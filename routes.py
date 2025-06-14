@@ -173,6 +173,68 @@ def delete_image(image_id):
         flash('An error occurred while deleting the image', 'error')
         return redirect(url_for('gallery'))
 
+@app.route('/download_video/<int:video_id>')
+def download_video(video_id):
+    """Download generated video"""
+    try:
+        video = GeneratedVideo.query.get_or_404(video_id)
+        video_path = os.path.join('static', 'videos', video.video_filename)
+        
+        if os.path.exists(video_path):
+            file_extension = os.path.splitext(video.video_filename)[1].lower()
+            download_name = f'generated_video_{video.id}{file_extension}'
+            
+            return send_file(video_path, as_attachment=True, 
+                           download_name=download_name)
+        else:
+            flash('Video file not found', 'error')
+            return redirect(url_for('video_gallery'))
+            
+    except Exception as e:
+        logging.error(f'Error downloading video: {str(e)}')
+        flash('An error occurred while downloading the video', 'error')
+        return redirect(url_for('video_gallery'))
+
+@app.route('/toggle_video_favorite/<int:video_id>', methods=['POST'])
+def toggle_video_favorite(video_id):
+    """Toggle favorite status of a video"""
+    try:
+        video = GeneratedVideo.query.get_or_404(video_id)
+        video.is_favorite = not video.is_favorite
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'is_favorite': video.is_favorite
+        })
+        
+    except Exception as e:
+        logging.error(f'Error toggling video favorite: {str(e)}')
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/delete_video/<int:video_id>', methods=['POST'])
+def delete_video_route(video_id):
+    """Delete a generated video"""
+    try:
+        video = GeneratedVideo.query.get_or_404(video_id)
+        
+        # Delete file if it exists
+        video_path = os.path.join('static', 'videos', video.video_filename)
+        if os.path.exists(video_path):
+            os.remove(video_path)
+        
+        # Delete from database
+        db.session.delete(video)
+        db.session.commit()
+        
+        flash('Video deleted successfully', 'success')
+        return redirect(url_for('video_gallery'))
+        
+    except Exception as e:
+        logging.error(f'Error deleting video: {str(e)}')
+        flash('An error occurred while deleting the video', 'error')
+        return redirect(url_for('video_gallery'))
+
 @app.errorhandler(404)
 def not_found_error(error):
     return render_template('base.html'), 404
