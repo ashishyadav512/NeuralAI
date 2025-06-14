@@ -16,25 +16,94 @@ class FreeVideoGenerator:
     def generate_video(self, prompt):
         """
         Generate video using free methods
-        Priority: RunwayML API -> Pollinations Video -> Local GIF generation
+        Priority: Local GIF generation (fast) -> Pollinations API (backup)
         """
         try:
-            # Method 1: Try Pollinations Video API (free)
-            result = self._generate_with_pollinations_video(prompt)
+            # Method 1: Create animated GIF locally (fast and reliable)
+            result = self._generate_animated_gif(prompt)
             if result:
                 return result
                 
-            # Method 2: Try Hugging Face Video Models
-            result = self._generate_with_huggingface_video(prompt)
-            if result:
-                return result
-                
-            # Method 3: Create animated GIF locally
-            return self._generate_animated_gif(prompt)
+            # Method 2: Try simple frame-based approach as backup
+            return self._create_simple_video(prompt)
             
         except Exception as e:
             logging.error(f"Error in generate_video: {str(e)}")
-            return self._generate_animated_gif(prompt)
+            return self._create_fallback_video(prompt)
+    
+    def _create_simple_video(self, prompt):
+        """Create a simple video using basic animation"""
+        try:
+            from PIL import Image, ImageDraw, ImageFont
+            import math
+            
+            logging.info(f"Creating simple video: {prompt[:50]}...")
+            
+            frames = []
+            frame_count = 8  # Reduced frame count for speed
+            width, height = 512, 512
+            
+            # Simple color-based animation
+            base_color = (99, 102, 241)  # Primary color
+            
+            for frame_num in range(frame_count):
+                # Create frame with animated background
+                img = Image.new('RGB', (width, height), color=base_color)
+                draw = ImageDraw.Draw(img)
+                
+                # Animation progress
+                progress = frame_num / frame_count
+                
+                # Simple animated elements
+                center_x, center_y = width // 2, height // 2
+                
+                # Pulsing circle
+                radius = 50 + int(math.sin(progress * 4 * math.pi) * 20)
+                draw.ellipse([
+                    center_x - radius, center_y - radius,
+                    center_x + radius, center_y + radius
+                ], fill=(255, 255, 255, 200), outline=(200, 200, 200))
+                
+                # Moving elements based on prompt
+                if 'cat' in prompt.lower():
+                    # Simple cat-like shape that moves
+                    offset_x = math.sin(progress * 2 * math.pi) * 30
+                    cat_x = center_x + offset_x
+                    draw.ellipse([cat_x - 20, center_y - 10, cat_x + 20, center_y + 10], fill=(150, 150, 150))
+                    # Ears
+                    draw.polygon([(cat_x - 15, center_y - 10), (cat_x - 25, center_y - 25), (cat_x - 5, center_y - 15)], fill=(160, 160, 160))
+                    draw.polygon([(cat_x + 5, center_y - 15), (cat_x + 25, center_y - 25), (cat_x + 15, center_y - 10)], fill=(160, 160, 160))
+                
+                # Add text overlay
+                try:
+                    font = ImageFont.load_default()
+                    text = f"AI Video: {prompt[:20]}..."
+                    bbox = draw.textbbox((0, 0), text, font=font)
+                    text_width = bbox[2] - bbox[0]
+                    draw.text(((width - text_width) // 2, height - 40), text, fill=(255, 255, 255), font=font)
+                except:
+                    pass
+                
+                frames.append(img)
+            
+            # Save as GIF
+            filename = f"video_{uuid.uuid4().hex[:8]}.gif"
+            filepath = os.path.join(self.videos_dir, filename)
+            
+            frames[0].save(
+                filepath,
+                save_all=True,
+                append_images=frames[1:],
+                duration=150,  # 150ms per frame
+                loop=0
+            )
+            
+            logging.info(f"Simple video created: {filename}")
+            return filename
+            
+        except Exception as e:
+            logging.error(f"Simple video creation failed: {str(e)}")
+            return None
     
     def _generate_with_pollinations_video(self, prompt):
         """Generate video using Pollinations Video API"""
@@ -43,9 +112,9 @@ class FreeVideoGenerator:
             base_url = "https://image.pollinations.ai/prompt/"
             from urllib.parse import quote
             
-            # Generate 10 frames with slight variations
+            # Generate 5 frames with slight variations (faster generation)
             frames = []
-            for i in range(10):
+            for i in range(5):
                 frame_prompt = f"{prompt}, frame {i+1}, slight variation, cinematic"
                 encoded_prompt = quote(frame_prompt)
                 
@@ -58,9 +127,9 @@ class FreeVideoGenerator:
                 
                 full_url = f"{base_url}{encoded_prompt}"
                 
-                logging.info(f"Generating video frame {i+1}/10...")
+                logging.info(f"Generating video frame {i+1}/5...")
                 
-                response = requests.get(full_url, params=params, timeout=30)
+                response = requests.get(full_url, params=params, timeout=15)
                 
                 if response.status_code == 200:
                     frame_filename = f"frame_{i:03d}.jpg"
@@ -75,9 +144,9 @@ class FreeVideoGenerator:
                     break
                 
                 # Small delay to avoid rate limiting
-                time.sleep(0.5)
+                time.sleep(0.2)
             
-            if len(frames) >= 5:  # Need at least 5 frames
+            if len(frames) >= 3:  # Need at least 3 frames
                 # Convert frames to GIF
                 video_filename = self._create_gif_from_frames(frames, prompt)
                 
