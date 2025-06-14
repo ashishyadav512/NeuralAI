@@ -133,6 +133,67 @@ class FreeVideoGenerator:
         except:
             return image1
     
+    def _apply_camera_movement(self, image, progress, prompt):
+        """Apply cinematic camera effects like zoom, pan, and rotate"""
+        try:
+            import math
+            from PIL import Image as PILImage, ImageOps
+            
+            width, height = image.size
+            
+            # Determine camera movement based on prompt content
+            if any(word in prompt.lower() for word in ['flying', 'soaring', 'above', 'aerial']):
+                # Aerial/flying scenes - zoom out effect
+                scale = 1.2 - (progress * 0.3)  # Start zoomed in, zoom out
+                new_width = int(width * scale)
+                new_height = int(height * scale)
+                
+            elif any(word in prompt.lower() for word in ['approaching', 'coming', 'close', 'near']):
+                # Approaching scenes - zoom in effect
+                scale = 1.0 + (progress * 0.4)  # Gradually zoom in
+                new_width = int(width * scale)
+                new_height = int(height * scale)
+                
+            elif any(word in prompt.lower() for word in ['moving', 'walking', 'running', 'traveling']):
+                # Movement scenes - slight pan effect
+                pan_offset = int(math.sin(progress * 2 * math.pi) * 20)
+                # Create slight horizontal movement
+                result = ImageOps.expand(image, border=(abs(pan_offset), 0), fill=(0, 0, 0))
+                if pan_offset > 0:
+                    result = result.crop((pan_offset, 0, width + pan_offset, height))
+                else:
+                    result = result.crop((0, 0, width, height))
+                return result
+                
+            else:
+                # Default subtle zoom breathing effect
+                scale = 1.0 + math.sin(progress * 2 * math.pi) * 0.05
+                new_width = int(width * scale)
+                new_height = int(height * scale)
+            
+            # Apply scaling
+            if scale != 1.0:
+                resized = image.resize((new_width, new_height), PILImage.Resampling.LANCZOS)
+                
+                # Center crop to original size
+                left = (new_width - width) // 2
+                top = (new_height - height) // 2
+                
+                if left < 0 or top < 0:
+                    # If scaling down, pad the image
+                    result = PILImage.new('RGB', (width, height), (0, 0, 0))
+                    paste_x = max(0, -left)
+                    paste_y = max(0, -top)
+                    result.paste(resized, (paste_x, paste_y))
+                    return result
+                else:
+                    return resized.crop((left, top, left + width, top + height))
+            
+            return image
+            
+        except Exception as e:
+            return image
+    
     def _apply_breathing_effect(self, image, progress):
         """Apply subtle breathing/pulsing effect"""
         try:
