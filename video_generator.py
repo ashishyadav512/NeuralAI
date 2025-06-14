@@ -106,17 +106,31 @@ class FreeVideoGenerator:
                 
                 frames.append(frame)
             
-            # Step 3: Save as animated GIF
-            filename = f"ai_video_{uuid.uuid4().hex[:8]}.gif"
+            # Step 3: Save as MP4 video using OpenCV
+            filename = f"ai_video_{uuid.uuid4().hex[:8]}.mp4"
             filepath = os.path.join(self.videos_dir, filename)
             
-            frames[0].save(
-                filepath,
-                save_all=True,
-                append_images=frames[1:],
-                duration=150,  # 150ms per frame for faster video feel
-                loop=0
-            )
+            # Convert PIL images to OpenCV format and create video
+            import cv2
+            import numpy as np
+            
+            # Get frame dimensions
+            height, width = frames[0].size[::-1]  # PIL uses (width, height), OpenCV uses (height, width)
+            
+            # Define codec and create VideoWriter
+            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+            fps = 8.0
+            out = cv2.VideoWriter(filepath, fourcc, fps, (width, height))
+            
+            # Convert frames and write to video
+            for frame in frames:
+                # Convert PIL image to OpenCV format (BGR)
+                frame_array = np.array(frame)
+                frame_bgr = cv2.cvtColor(frame_array, cv2.COLOR_RGB2BGR)
+                out.write(frame_bgr)
+            
+            # Release video writer
+            out.release()
             
             logging.info(f"AI image video created: {filename}")
             return filename
@@ -406,17 +420,25 @@ class FreeVideoGenerator:
                 
                 frames.append(img)
             
-            # Save as GIF
-            filename = f"video_{uuid.uuid4().hex[:8]}.gif"
+            # Save as MP4 video using OpenCV
+            filename = f"video_{uuid.uuid4().hex[:8]}.mp4"
             filepath = os.path.join(self.videos_dir, filename)
             
-            frames[0].save(
-                filepath,
-                save_all=True,
-                append_images=frames[1:],
-                duration=150,  # 150ms per frame
-                loop=0
-            )
+            # Convert frames to OpenCV format
+            import cv2
+            import numpy as np
+            
+            height, width = frames[0].size[::-1]
+            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+            fps = 8.0
+            out = cv2.VideoWriter(filepath, fourcc, fps, (width, height))
+            
+            for frame in frames:
+                frame_array = np.array(frame)
+                frame_bgr = cv2.cvtColor(frame_array, cv2.COLOR_RGB2BGR)
+                out.write(frame_bgr)
+            
+            out.release()
             
             logging.info(f"Simple video created: {filename}")
             return filename
