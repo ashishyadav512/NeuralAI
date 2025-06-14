@@ -69,40 +69,76 @@ class FreeVideoGenerator:
             
             logging.info("Creating animated frames from AI image...")
             
-            # Step 2: Create video-like sequence with single AI image and advanced effects
-            frames = []
-            frame_count = 24  # More frames for smoother, longer video
+            # Step 2: Generate multiple AI images for different action stages
+            logging.info("Generating action sequence images...")
             
-            logging.info("Creating cinematic video sequence from AI image...")
+            # Create action-based prompts for different stages
+            action_prompts = self._generate_action_sequence_prompts(prompt)
+            
+            # Generate only key action images (reduced from full sequence for speed)
+            action_images = [base_image]  # Start with base image
+            
+            # Generate only the most critical action stage for motion
+            if action_prompts and len(action_prompts) > 1:
+                # Choose the most dynamic action frame (usually middle of sequence)
+                key_action_prompt = action_prompts[len(action_prompts) // 2]
+                logging.info(f"Generating key action frame: {key_action_prompt[:50]}...")
+                
+                try:
+                    encoded_action = quote(f"{key_action_prompt}, high quality, detailed, cinematic")
+                    response = requests.get(f"{base_url}{encoded_action}", params=params, timeout=12)
+                    
+                    if response.status_code == 200:
+                        action_image = Image.open(io.BytesIO(response.content)).convert('RGB')
+                        action_images.append(action_image)
+                    else:
+                        action_images.append(base_image.copy())
+                except:
+                    action_images.append(base_image.copy())
+            
+            # Step 3: Create smooth transitions between action stages
+            frames = []
+            frame_count = len(action_images) * 8  # 8 frames per action stage
+            
+            logging.info("Creating motion sequence from action images...")
             
             for frame_num in range(frame_count):
-                # Copy the base AI image
-                frame = base_image.copy()
+                # Determine which action stage we're in
+                stage_index = frame_num // 8
+                stage_progress = (frame_num % 8) / 7.0  # Progress within current stage
                 
-                # Animation progress (0 to 1)
-                progress = frame_num / frame_count
+                current_stage = min(stage_index, len(action_images) - 1)
+                next_stage = min(stage_index + 1, len(action_images) - 1)
                 
-                # Apply cinematic camera effects to simulate video movement
-                frame = self._apply_camera_movement(frame, progress, prompt)
+                # Blend between current and next action images for smooth motion
+                if current_stage == next_stage:
+                    frame = action_images[current_stage].copy()
+                else:
+                    # Create smooth transition between action stages
+                    frame = self._blend_images(action_images[current_stage], action_images[next_stage], stage_progress)
+                
+                # Apply motion-specific effects based on the action
+                frame = self._apply_action_motion_effects(frame, frame_num / frame_count, prompt)
                 
                 # Apply context-specific animation effects
+                overall_progress = frame_num / frame_count
                 
                 # Apply different animation effects based on prompt content
                 if any(word in prompt.lower() for word in ['fire', 'flame', 'burning', 'dragon']):
-                    frame = self._apply_fire_effect(frame, progress)
+                    frame = self._apply_fire_effect(frame, overall_progress)
                 elif any(word in prompt.lower() for word in ['water', 'ocean', 'wave', 'rain', 'sea']):
-                    frame = self._apply_water_effect(frame, progress)
+                    frame = self._apply_water_effect(frame, overall_progress)
                 elif any(word in prompt.lower() for word in ['wind', 'flying', 'moving', 'floating', 'car', 'running']):
-                    frame = self._apply_motion_effect(frame, progress)
+                    frame = self._apply_motion_effect(frame, overall_progress)
                 elif any(word in prompt.lower() for word in ['magic', 'spell', 'glow', 'energy', 'fantasy', 'warrior', 'armor', 'sword']):
-                    frame = self._apply_glow_effect(frame, progress)
+                    frame = self._apply_glow_effect(frame, overall_progress)
                 elif any(word in prompt.lower() for word in ['night', 'dark', 'moon', 'stars', 'city']):
-                    frame = self._apply_night_effect(frame, progress)
+                    frame = self._apply_night_effect(frame, overall_progress)
                 elif any(word in prompt.lower() for word in ['portrait', 'face', 'person', 'girl', 'boy', 'man', 'woman']):
-                    frame = self._apply_portrait_effect(frame, progress)
+                    frame = self._apply_portrait_effect(frame, overall_progress)
                 else:
                     # Default subtle animation - breathing/pulsing effect
-                    frame = self._apply_breathing_effect(frame, progress)
+                    frame = self._apply_breathing_effect(frame, overall_progress)
                 
                 frames.append(frame)
             
@@ -146,6 +182,123 @@ class FreeVideoGenerator:
             return PILImage.blend(image1, image2, 1.0 - alpha)
         except:
             return image1
+    
+    def _generate_action_sequence_prompts(self, original_prompt):
+        """Generate sequence of prompts for different action stages"""
+        prompt_lower = original_prompt.lower()
+        
+        # Detect action type and create appropriate sequence (reduced for speed)
+        if any(word in prompt_lower for word in ['cutting', 'cut', 'chopping', 'sawing']):
+            if 'tree' in prompt_lower:
+                return [
+                    f"{original_prompt}, person raising axe above head ready to cut",
+                    f"{original_prompt}, person swinging axe down toward tree",
+                    f"{original_prompt}, axe hitting tree bark, wood chips flying"
+                ]
+        
+        elif any(word in prompt_lower for word in ['walking', 'running', 'moving']):
+            return [
+                f"{original_prompt}, starting position",
+                f"{original_prompt}, mid-step with one foot forward",
+                f"{original_prompt}, full stride in motion",
+                f"{original_prompt}, completing step"
+            ]
+        
+        elif any(word in prompt_lower for word in ['jumping', 'leap']):
+            return [
+                f"{original_prompt}, crouching before jump",
+                f"{original_prompt}, beginning to leap up",
+                f"{original_prompt}, at highest point of jump",
+                f"{original_prompt}, landing from jump"
+            ]
+        
+        elif any(word in prompt_lower for word in ['dancing', 'dance']):
+            return [
+                f"{original_prompt}, starting dance pose",
+                f"{original_prompt}, arms extended in dance move",
+                f"{original_prompt}, spinning in dance motion",
+                f"{original_prompt}, finishing dance pose"
+            ]
+        
+        elif any(word in prompt_lower for word in ['fighting', 'punching', 'boxing']):
+            return [
+                f"{original_prompt}, guard position ready to fight",
+                f"{original_prompt}, throwing a punch",
+                f"{original_prompt}, punch connecting",
+                f"{original_prompt}, pulling back after hit"
+            ]
+        
+        elif any(word in prompt_lower for word in ['eating', 'drinking']):
+            return [
+                f"{original_prompt}, reaching for food/drink",
+                f"{original_prompt}, bringing to mouth",
+                f"{original_prompt}, taking a bite/sip",
+                f"{original_prompt}, finishing eating/drinking"
+            ]
+        
+        elif any(word in prompt_lower for word in ['waving', 'wave']):
+            return [
+                f"{original_prompt}, hand at side",
+                f"{original_prompt}, raising hand to wave",
+                f"{original_prompt}, hand waving left",
+                f"{original_prompt}, hand waving right"
+            ]
+        
+        else:
+            # Default action sequence for any activity
+            return [
+                f"{original_prompt}, beginning action",
+                f"{original_prompt}, mid-action in progress",
+                f"{original_prompt}, action at peak intensity",
+                f"{original_prompt}, completing action"
+            ]
+    
+    def _apply_action_motion_effects(self, image, progress, prompt):
+        """Apply motion blur and effects specific to the action"""
+        try:
+            import math
+            from PIL import ImageFilter, ImageEnhance
+            
+            prompt_lower = prompt.lower()
+            
+            # Apply action-specific motion effects
+            if any(word in prompt_lower for word in ['cutting', 'chopping', 'swinging']):
+                # Sharp, quick motion blur for cutting actions
+                if 0.3 < progress < 0.7:  # During the swing
+                    motion_intensity = math.sin((progress - 0.3) * math.pi / 0.4) * 2
+                    if motion_intensity > 0.5:
+                        blurred = image.filter(ImageFilter.BLUR)
+                        image = self._blend_images(image, blurred, motion_intensity * 0.4)
+            
+            elif any(word in prompt_lower for word in ['running', 'walking']):
+                # Continuous motion blur for movement
+                motion_intensity = abs(math.sin(progress * 4 * math.pi)) * 1.2
+                if motion_intensity > 0.3:
+                    blurred = image.filter(ImageFilter.BLUR)
+                    image = self._blend_images(image, blurred, motion_intensity * 0.3)
+            
+            elif any(word in prompt_lower for word in ['jumping', 'leap']):
+                # Vertical motion effects
+                if 0.2 < progress < 0.8:  # During jump
+                    enhancer = ImageEnhance.Brightness(image)
+                    image = enhancer.enhance(1.1)
+            
+            elif any(word in prompt_lower for word in ['dancing']):
+                # Flowing motion with brightness variation
+                flow = math.sin(progress * 6 * math.pi) * 0.1
+                enhancer = ImageEnhance.Brightness(image)
+                image = enhancer.enhance(1.0 + flow)
+            
+            elif any(word in prompt_lower for word in ['fighting', 'punching']):
+                # Sharp impact effects
+                if 0.4 < progress < 0.6:  # During impact
+                    enhancer = ImageEnhance.Contrast(image)
+                    image = enhancer.enhance(1.2)
+            
+            return image
+            
+        except:
+            return image
     
     def _apply_camera_movement(self, image, progress, prompt):
         """Apply cinematic camera effects like zoom, pan, and rotate"""
