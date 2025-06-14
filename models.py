@@ -1,17 +1,16 @@
 from app import db
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean
 
 class GeneratedImage(db.Model):
     """Model for storing generated images"""
     __tablename__ = 'generated_images'
     
-    id = Column(Integer, primary_key=True)
-    prompt = Column(Text, nullable=False)
-    image_filename = Column(String(255), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    is_favorite = Column(Boolean, default=False)
-    generation_time = Column(Integer, default=0)  # in seconds
+    id = db.Column(db.Integer, primary_key=True)
+    prompt = db.Column(db.Text, nullable=False)
+    image_filename = db.Column(db.String(255), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    is_favorite = db.Column(db.Boolean, default=False)
+    generation_time = db.Column(db.Integer, default=0)  # in seconds
     
     def __repr__(self):
         return f'<GeneratedImage {self.id}: {self.prompt[:50]}...>'

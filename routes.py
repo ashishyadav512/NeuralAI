@@ -66,8 +66,12 @@ def download_image(image_id):
         image_path = os.path.join('static', 'images', image.image_filename)
         
         if os.path.exists(image_path):
+            # Get the file extension to determine the correct MIME type
+            file_extension = os.path.splitext(image.image_filename)[1].lower()
+            download_name = f'generated_image_{image.id}{file_extension}'
+            
             return send_file(image_path, as_attachment=True, 
-                           download_name=f'generated_image_{image.id}.svg')
+                           download_name=download_name)
         else:
             flash('Image file not found', 'error')
             return redirect(url_for('gallery'))
