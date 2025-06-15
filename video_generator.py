@@ -112,9 +112,9 @@ class FreeVideoGenerator:
             
             logging.info(f"Generated {len(action_images)} distinct motion frames")
             
-            # Step 3: Create ultra-smooth transitions with more frames for longer videos
+            # Step 3: Create ultra-smooth transitions with enhanced visual effects
             frames = []
-            frame_count = 90  # Much longer video - 6 seconds at 15 FPS
+            frame_count = 150  # Extended to 10 seconds for more visual effects
             
             logging.info("Creating ultra-smooth motion sequence...")
             
@@ -151,8 +151,10 @@ class FreeVideoGenerator:
                             prompt
                         )
                 
-                # Apply motion-specific effects
+                # Apply advanced visual effects and motion
+                frame = self._apply_advanced_visual_effects(frame, overall_progress, prompt)
                 frame = self._apply_action_motion_effects(frame, overall_progress, prompt)
+                frame = self._add_cinematic_effects(frame, overall_progress, prompt)
                 
                 # Apply context-specific animation effects
                 overall_progress = frame_num / frame_count
@@ -382,6 +384,199 @@ class FreeVideoGenerator:
         except:
             return base_image.copy()
     
+    def _apply_advanced_visual_effects(self, image, progress, prompt):
+        """Apply advanced visual effects for stunning videos"""
+        try:
+            from PIL import Image as PILImage, ImageEnhance, ImageFilter, ImageDraw
+            import math
+            import random
+            
+            # Convert to PIL for advanced effects
+            if hasattr(image, 'size'):
+                pil_image = image
+            else:
+                pil_image = PILImage.fromarray(image)
+            
+            width, height = pil_image.size
+            
+            # Create overlay for particle effects
+            overlay = PILImage.new('RGBA', (width, height), (0, 0, 0, 0))
+            draw = ImageDraw.Draw(overlay)
+            
+            prompt_lower = prompt.lower()
+            
+            # Add context-specific particle effects
+            if any(word in prompt_lower for word in ['waterfall', 'water', 'rain']):
+                # Water droplet effects
+                for _ in range(int(30 * (1 + progress))):
+                    x = random.randint(0, width)
+                    y = random.randint(0, height)
+                    size = random.randint(2, 6)
+                    alpha = random.randint(50, 150)
+                    draw.ellipse([x-size, y-size, x+size, y+size], 
+                               fill=(173, 216, 230, alpha))
+            
+            elif any(word in prompt_lower for word in ['dancing', 'party', 'celebration']):
+                # Sparkle and energy effects
+                for _ in range(int(50 * (1 + progress))):
+                    x = random.randint(0, width)
+                    y = random.randint(0, height)
+                    size = random.randint(1, 4)
+                    colors = [(255, 215, 0), (255, 192, 203), (255, 255, 255)]
+                    color = random.choice(colors)
+                    alpha = random.randint(100, 200)
+                    draw.ellipse([x-size, y-size, x+size, y+size], 
+                               fill=(*color, alpha))
+            
+            elif any(word in prompt_lower for word in ['nature', 'forest', 'garden']):
+                # Floating pollen/dust effects
+                for _ in range(int(25 * (1 + progress))):
+                    x = random.randint(0, width)
+                    y = random.randint(0, height)
+                    size = random.randint(1, 3)
+                    alpha = random.randint(80, 120)
+                    draw.ellipse([x-size, y-size, x+size, y+size], 
+                               fill=(255, 255, 200, alpha))
+            
+            elif any(word in prompt_lower for word in ['magic', 'fantasy', 'mystical']):
+                # Magical sparkles and glows
+                for _ in range(int(40 * (1 + progress))):
+                    x = random.randint(0, width)
+                    y = random.randint(0, height)
+                    size = random.randint(2, 8)
+                    colors = [(138, 43, 226), (255, 20, 147), (0, 191, 255)]
+                    color = random.choice(colors)
+                    alpha = random.randint(60, 180)
+                    draw.ellipse([x-size, y-size, x+size, y+size], 
+                               fill=(*color, alpha))
+            
+            # Add dynamic light rays for dramatic effect
+            if progress > 0.3:
+                self._add_light_rays(draw, width, height, progress, prompt)
+            
+            # Composite overlay with original image
+            pil_image = PILImage.alpha_composite(pil_image.convert('RGBA'), overlay).convert('RGB')
+            
+            # Apply dynamic color enhancement
+            if progress > 0.5:
+                enhancer = ImageEnhance.Color(pil_image)
+                color_boost = 1.0 + math.sin(progress * 4 * math.pi) * 0.2
+                pil_image = enhancer.enhance(color_boost)
+            
+            return pil_image
+            
+        except Exception as e:
+            return image
+    
+    def _add_light_rays(self, draw, width, height, progress, prompt):
+        """Add dynamic light ray effects"""
+        try:
+            import math
+            import random
+            
+            # Add light rays from different directions based on content
+            prompt_lower = prompt.lower()
+            
+            if any(word in prompt_lower for word in ['waterfall', 'forest', 'sunlit']):
+                # Sunlight rays from top
+                ray_count = 8
+                for i in range(ray_count):
+                    angle = (i / ray_count) * math.pi + math.sin(progress * 2 * math.pi) * 0.3
+                    start_x = width // 2 + math.cos(angle) * 50
+                    start_y = 0
+                    end_x = width // 2 + math.cos(angle) * height
+                    end_y = height
+                    
+                    alpha = int(30 + 20 * math.sin(progress * 3 * math.pi + i))
+                    draw.line([(start_x, start_y), (end_x, end_y)], 
+                             fill=(255, 255, 200, alpha), width=3)
+            
+            elif any(word in prompt_lower for word in ['dancing', 'party']):
+                # Stage lighting effects
+                for i in range(4):
+                    center_x = random.randint(width//4, 3*width//4)
+                    center_y = random.randint(height//4, 3*height//4)
+                    radius = random.randint(30, 80)
+                    
+                    # Create circular light effect
+                    for r in range(0, radius, 5):
+                        alpha = max(0, 80 - r)
+                        color = (255, 200 + random.randint(-50, 50), 100, alpha)
+                        draw.ellipse([center_x-r, center_y-r, center_x+r, center_y+r], 
+                                   outline=color, width=2)
+            
+        except:
+            pass
+    
+    def _add_cinematic_effects(self, image, progress, prompt):
+        """Add cinematic effects like film grain, vignettes, and color grading"""
+        try:
+            from PIL import Image as PILImage, ImageEnhance, ImageFilter
+            import math
+            import random
+            
+            if hasattr(image, 'size'):
+                pil_image = image
+            else:
+                pil_image = PILImage.fromarray(image)
+            
+            width, height = pil_image.size
+            
+            # Add subtle vignette effect
+            vignette = PILImage.new('RGBA', (width, height), (0, 0, 0, 0))
+            vignette_draw = ImageDraw.Draw(vignette)
+            
+            # Create vignette gradient
+            center_x, center_y = width // 2, height // 2
+            max_distance = math.sqrt(center_x**2 + center_y**2)
+            
+            for y in range(0, height, 10):
+                for x in range(0, width, 10):
+                    distance = math.sqrt((x - center_x)**2 + (y - center_y)**2)
+                    alpha = int((distance / max_distance) * 40)
+                    vignette_draw.rectangle([x, y, x+10, y+10], fill=(0, 0, 0, alpha))
+            
+            # Apply vignette
+            pil_image = PILImage.alpha_composite(pil_image.convert('RGBA'), vignette).convert('RGB')
+            
+            # Add film grain for cinematic look
+            if progress > 0.2:
+                grain_overlay = PILImage.new('RGBA', (width, height), (0, 0, 0, 0))
+                grain_pixels = grain_overlay.load()
+                
+                for y in range(0, height, 2):
+                    for x in range(0, width, 2):
+                        if random.random() < 0.1:
+                            grain_value = random.randint(-20, 20)
+                            alpha = 30
+                            color = (128 + grain_value, 128 + grain_value, 128 + grain_value, alpha)
+                            grain_pixels[x, y] = color
+                
+                pil_image = PILImage.alpha_composite(pil_image.convert('RGBA'), grain_overlay).convert('RGB')
+            
+            # Dynamic color grading based on progress
+            if progress > 0.4:
+                # Warm up colors during peak moments
+                enhancer = ImageEnhance.Color(pil_image)
+                color_intensity = 1.0 + math.sin(progress * 2 * math.pi) * 0.15
+                pil_image = enhancer.enhance(color_intensity)
+                
+                # Add slight contrast boost
+                contrast_enhancer = ImageEnhance.Contrast(pil_image)
+                pil_image = contrast_enhancer.enhance(1.1)
+            
+            # Add motion blur during high-action moments
+            prompt_lower = prompt.lower()
+            if any(word in prompt_lower for word in ['dancing', 'spinning', 'action']) and 0.4 < progress < 0.8:
+                motion_blur = pil_image.filter(ImageFilter.BLUR)
+                blend_factor = 0.3 * math.sin((progress - 0.4) * 5 * math.pi)
+                pil_image = PILImage.blend(pil_image, motion_blur, blend_factor)
+            
+            return pil_image
+            
+        except Exception as e:
+            return image
+
     def _generate_action_sequence_prompts(self, original_prompt):
         """Generate sequence of prompts for different action stages"""
         prompt_lower = original_prompt.lower()
