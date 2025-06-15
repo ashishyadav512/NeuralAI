@@ -235,11 +235,12 @@ class FreeVideoGenerator:
             
             logging.info(f"Successfully wrote {frames_written} frames to video")
             
-            # Step 4: Add background music to the video
-            logging.info("Adding background music to video...")
-            final_filename = self._add_background_music(filepath, prompt)
+            # Step 4: Add engaging hooks and background music
+            logging.info("Adding engaging hooks and background music...")
+            hook_enhanced_filename = self._add_engaging_hooks(filepath, prompt)
+            final_filename = self._add_background_music(hook_enhanced_filename, prompt)
             
-            logging.info(f"AI image video with music created: {final_filename}")
+            logging.info(f"AI image video with hooks and music created: {final_filename}")
             return final_filename
             
         except Exception as e:
@@ -1250,6 +1251,215 @@ class FreeVideoGenerator:
                 particle_x + size, particle_y + size
             ], fill=(255, 255, 255, alpha))
     
+    def _add_engaging_hooks(self, video_path, prompt):
+        """Add compelling text overlays and hooks to make videos viral-ready"""
+        try:
+            import cv2
+            import numpy as np
+            from PIL import Image, ImageDraw, ImageFont
+            
+            # Generate hook text based on video content
+            hook_text = self._generate_hook_text(prompt)
+            
+            # Load video
+            cap = cv2.VideoCapture(video_path)
+            fps = cap.get(cv2.CAP_PROP_FPS)
+            width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+            height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            
+            # Create output video with hooks
+            hook_filename = video_path.replace('.mp4', '_with_hooks.mp4')
+            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+            out = cv2.VideoWriter(hook_filename, fourcc, fps, (width, height))
+            
+            frame_count = 0
+            total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            
+            while True:
+                ret, frame = cap.read()
+                if not ret:
+                    break
+                
+                # Add hook overlay based on timing
+                enhanced_frame = self._add_hook_overlay(frame, hook_text, frame_count, total_frames, prompt)
+                out.write(enhanced_frame)
+                frame_count += 1
+            
+            cap.release()
+            out.release()
+            
+            logging.info(f"Added engaging hooks to video: {hook_text}")
+            return hook_filename
+            
+        except Exception as e:
+            logging.error(f"Failed to add hooks: {str(e)}")
+            return video_path
+    
+    def _generate_hook_text(self, prompt):
+        """Generate compelling hook text based on video content"""
+        prompt_lower = prompt.lower()
+        
+        # Generate attention-grabbing hooks based on content
+        if any(word in prompt_lower for word in ['dancing', 'dance']):
+            hooks = [
+                "This dance will blow your mind! 🔥",
+                "Watch this incredible move!",
+                "You won't believe this dance!",
+                "This is pure magic! ✨",
+                "Wait for the spin!"
+            ]
+        elif any(word in prompt_lower for word in ['waterfall', 'nature', 'forest']):
+            hooks = [
+                "Nature's pure magic! 🌊",
+                "This place is unreal!",
+                "Paradise found! 🌿",
+                "Mother Nature's masterpiece!",
+                "Wait for the reveal!"
+            ]
+        elif any(word in prompt_lower for word in ['cat', 'kitten', 'pet']):
+            hooks = [
+                "This cat is too cute! 😻",
+                "You need to see this!",
+                "Cutest thing ever!",
+                "This will make your day!",
+                "Watch till the end!"
+            ]
+        elif any(word in prompt_lower for word in ['action', 'fighting', 'martial']):
+            hooks = [
+                "Incredible skills! 💪",
+                "This is insane!",
+                "Watch this power move!",
+                "Mind-blowing technique!",
+                "You won't believe this!"
+            ]
+        elif any(word in prompt_lower for word in ['cooking', 'chef', 'food']):
+            hooks = [
+                "This cooking hack is genius! 👨‍🍳",
+                "You need to try this!",
+                "This will change everything!",
+                "Secret technique revealed!",
+                "Watch this magic happen!"
+            ]
+        else:
+            hooks = [
+                "You won't believe this!",
+                "This is incredible!",
+                "Watch till the end!",
+                "Something amazing happens!",
+                "This will blow your mind!"
+            ]
+        
+        import random
+        return random.choice(hooks)
+    
+    def _add_hook_overlay(self, frame, hook_text, frame_num, total_frames, prompt):
+        """Add hook text overlay to frame with timing and effects"""
+        try:
+            from PIL import Image, ImageDraw, ImageFont
+            import cv2
+            import numpy as np
+            
+            # Convert frame to PIL Image
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            pil_image = Image.fromarray(frame_rgb)
+            draw = ImageDraw.Draw(pil_image)
+            
+            # Get frame dimensions
+            width, height = pil_image.size
+            
+            # Show hook text during first 2 seconds (30 frames at 15 fps)
+            if frame_num < 30:
+                # Calculate text position and size
+                font_size = max(32, width // 25)
+                try:
+                    font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", font_size)
+                except:
+                    font = ImageFont.load_default()
+                
+                # Get text dimensions
+                bbox = draw.textbbox((0, 0), hook_text, font=font)
+                text_width = bbox[2] - bbox[0]
+                text_height = bbox[3] - bbox[1]
+                
+                # Position text at top center
+                x = (width - text_width) // 2
+                y = height // 10
+                
+                # Add background rectangle for better readability
+                padding = 20
+                rect_coords = [
+                    x - padding, y - padding,
+                    x + text_width + padding, y + text_height + padding
+                ]
+                
+                # Animate background opacity
+                alpha = int(255 * (1 - frame_num / 30))  # Fade out over time
+                
+                # Create semi-transparent background
+                overlay = Image.new('RGBA', pil_image.size, (0, 0, 0, 0))
+                overlay_draw = ImageDraw.Draw(overlay)
+                overlay_draw.rectangle(rect_coords, fill=(0, 0, 0, min(180, alpha)))
+                
+                # Combine overlay with image
+                pil_image = Image.alpha_composite(pil_image.convert('RGBA'), overlay).convert('RGB')
+                draw = ImageDraw.Draw(pil_image)
+                
+                # Add text with color based on content
+                text_color = self._get_hook_text_color(prompt)
+                draw.text((x, y), hook_text, font=font, fill=text_color)
+            
+            # Add call-to-action in final frames
+            elif frame_num > total_frames - 20:  # Last 20 frames
+                cta_text = "👍 Like & Follow for more!"
+                font_size = max(24, width // 35)
+                try:
+                    font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", font_size)
+                except:
+                    font = ImageFont.load_default()
+                
+                bbox = draw.textbbox((0, 0), cta_text, font=font)
+                text_width = bbox[2] - bbox[0]
+                
+                # Position at bottom center
+                x = (width - text_width) // 2
+                y = height - height // 8
+                
+                # Add semi-transparent background
+                padding = 15
+                overlay = Image.new('RGBA', pil_image.size, (0, 0, 0, 0))
+                overlay_draw = ImageDraw.Draw(overlay)
+                overlay_draw.rectangle([
+                    x - padding, y - padding,
+                    x + text_width + padding, y + font_size + padding
+                ], fill=(0, 0, 0, 150))
+                
+                pil_image = Image.alpha_composite(pil_image.convert('RGBA'), overlay).convert('RGB')
+                draw = ImageDraw.Draw(pil_image)
+                draw.text((x, y), cta_text, font=font, fill=(255, 255, 255))
+            
+            # Convert back to OpenCV format
+            frame_array = np.array(pil_image)
+            return cv2.cvtColor(frame_array, cv2.COLOR_RGB2BGR)
+            
+        except Exception as e:
+            logging.error(f"Error adding hook overlay: {str(e)}")
+            return frame
+    
+    def _get_hook_text_color(self, prompt):
+        """Get appropriate text color based on content mood"""
+        prompt_lower = prompt.lower()
+        
+        if any(word in prompt_lower for word in ['dancing', 'party', 'celebration']):
+            return (255, 100, 150)  # Pink/magenta for energetic content
+        elif any(word in prompt_lower for word in ['nature', 'waterfall', 'peaceful']):
+            return (100, 255, 150)  # Green for nature content
+        elif any(word in prompt_lower for word in ['action', 'fighting', 'power']):
+            return (255, 150, 100)  # Orange/red for action content
+        elif any(word in prompt_lower for word in ['cute', 'cat', 'adorable']):
+            return (255, 200, 100)  # Yellow for cute content
+        else:
+            return (255, 255, 255)  # White for general content
+
     def _add_background_music(self, video_path, prompt):
         """Add appropriate background music to the video"""
         try:
