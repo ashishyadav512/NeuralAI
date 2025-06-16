@@ -1,0 +1,22 @@
+# Core Web Framework
+Flask==2.3.3
+Werkzeug==2.3.7
+gunicorn==21.2.0
+
+# Database & ORM
+SQLAlchemy==2.0.23
+Flask-SQLAlchemy==3.1.1
+psycopg2-binary==2.9.9
+
+# AI & Image Processing
+Pillow==10.1.0
+requests==2.31.0
+opencv-python==4.8.1.78
+numpy==1.24.4
+scipy==1.11.4
+
+# Video Processing & Effects
+moviepy==1.0.3
+
+# Utilities
+email-validator==2.1.0
