@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Video Generator - Create Stunning Videos with AI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.29.0/feather.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-indigo: #6366F1;
+            --primary-purple: #8B5CF6;
+            --light-grey: #F8FAFC;
+            --dark-grey: #1E293B;
+            --text-primary: #0F172A;
+            --text-secondary: #64748B;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--light-grey) 0%, #E2E8F0 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+        
+        .hero-section {
+            background: linear-gradient(135deg, var(--primary-indigo) 0%, var(--primary-purple) 100%);
+            color: white;
+            padding: 4rem 0;
+            margin-bottom: 3rem;
+        }
+        
+        .hero-title {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
+            font-size: 3.5rem;
+            margin-bottom: 1.5rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .hero-subtitle {
+            font-size: 1.25rem;
+            opacity: 0.9;
+            margin-bottom: 2rem;
+            font-weight: 300;
+        }
+        
+        .generator-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 2.5rem;
+            margin-bottom: 3rem;
+            border: 1px solid rgba(99, 102, 241, 0.1);
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.75rem;
+        }
+        
+        .form-control {
+            border: 2px solid #E2E8F0;
+            border-radius: 12px;
+            padding: 1rem;
+            font-size: 1rem;
+            resize: vertical;
+            min-height: 120px;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary-indigo);
+            box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.25);
+        }
+        
+        .btn-generate {
+            background: linear-gradient(135deg, var(--primary-indigo) 0%, var(--primary-purple) 100%);
+            border: none;
+            padding: 1rem 2.5rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 12px;
+            color: white;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 1.5rem;
+        }
+        
+        .btn-generate:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);
+            color: white;
+        }
+        
+        .video-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+        
+        .video-card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(99, 102, 241, 0.1);
+        }
+        
+        .video-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+        
+        .video-player {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+        }
+        
+        .video-info {
+            padding: 1.5rem;
+        }
+        
+        .video-prompt {
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            line-height: 1.4;
+        }
+        
+        .video-meta {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+        
+        .status-completed {
+            background: #10B981;
+            color: white;
+        }
+        
+        .status-generating {
+            background: #F59E0B;
+            color: white;
+        }
+        
+        .status-failed {
+            background: #EF4444;
+            color: white;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+        
+        .feature-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border: 1px solid rgba(99, 102, 241, 0.1);
+        }
+        
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary-indigo) 0%, var(--primary-purple) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            color: white;
+            font-size: 1.5rem;
+        }
+        
+        .feature-title {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: var(--text-primary);
+        }
+        
+        .feature-description {
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+        
+        .alert {
+            border-radius: 12px;
+            border: none;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .alert-success {
+            background: #D1FAE5;
+            color: #065F46;
+        }
+        
+        .alert-danger {
+            background: #FEE2E2;
+            color: #991B1B;
+        }
+        
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.5rem;
+            }
+            
+            .generator-card {
+                padding: 1.5rem;
+            }
+            
+            .video-gallery {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="container">
+            <div class="row justify-content-center text-center">
+                <div class="col-lg-8">
+                    <h1 class="hero-title">AI Video Generator</h1>
+                    <p class="hero-subtitle">Transform your ideas into stunning cinematic videos with advanced AI technology</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Video Generator Form -->
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="generator-card">
+                    <form method="POST" action="{{ url_for('generate_video') }}">
+                        <div class="mb-4">
+                            <label for="prompt" class="form-label">Describe Your Video</label>
+                            <textarea 
+                                class="form-control" 
+                                id="prompt" 
+                                name="prompt" 
+                                placeholder="A majestic lion walking through golden savanna at sunset, cinematic lighting, photorealistic, 4K quality..."
+                                required></textarea>
+                            <div class="form-text mt-2">
+                                <strong>Pro tip:</strong> Be descriptive! Include details about lighting, camera angles, and visual style for best results.
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-generate">
+                            <i data-feather="video" style="width: 20px; height: 20px; margin-right: 8px;"></i>
+                            Generate AI Video
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Section -->
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i data-feather="zap"></i>
+                </div>
+                <h4 class="feature-title">Lightning Fast</h4>
+                <p class="feature-description">Generate high-quality videos in seconds with our optimized AI pipeline</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i data-feather="film"></i>
+                </div>
+                <h4 class="feature-title">Cinematic Quality</h4>
+                <p class="feature-description">Professional-grade visual effects, motion blur, and color grading</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i data-feather="infinity"></i>
+                </div>
+                <h4 class="feature-title">Unlimited Creation</h4>
+                <p class="feature-description">No API limits or restrictions - create as many videos as you want</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i data-feather="share-2"></i>
+                </div>
+                <h4 class="feature-title">Social Ready</h4>
+                <p class="feature-description">Optimized for YouTube, TikTok, and Instagram with engaging hooks</p>
+            </div>
+        </div>
+
+        <!-- Recent Videos Gallery -->
+        {% if recent_videos %}
+        <div class="row">
+            <div class="col-12">
+                <h2 class="text-center mb-4" style="font-family: 'Poppins', sans-serif; font-weight: 600;">Recent Creations</h2>
+                <div class="video-gallery">
+                    {% for video in recent_videos %}
+                    <div class="video-card">
+                        {% if video.video_filename and video.status == 'completed' %}
+                            <video class="video-player" controls>
+                                <source src="{{ url_for('serve_video', filename=video.video_filename) }}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        {% else %}
+                            <div class="video-player d-flex align-items-center justify-content-center" style="background: #F1F5F9;">
+                                <i data-feather="film" style="width: 50px; height: 50px; color: #64748B;"></i>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="video-info">
+                            <p class="video-prompt">{{ video.prompt[:100] }}{% if video.prompt|length > 100 %}...{% endif %}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="status-badge status-{{ video.status }}">
+                                    {{ video.status }}
+                                </span>
+                                <span class="video-meta">
+                                    {{ video.created_at.strftime('%b %d, %Y') if video.created_at else 'Unknown' }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Footer -->
+    <footer class="mt-5 py-4" style="background: var(--light-grey); border-top: 1px solid #E2E8F0;">
+        <div class="container text-center">
+            <p class="mb-0" style="color: var(--text-secondary);">
+                Powered by advanced AI technology • Create unlimited videos • No API restrictions
+            </p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <script>
+        // Initialize Feather icons
+        feather.replace();
+        
+        // Auto-resize textarea
+        const textarea = document.getElementById('prompt');
+        if (textarea) {
+            textarea.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+            });
+        }
+        
+        // Form submission handling
+        const form = document.querySelector('form');
+        const submitBtn = document.querySelector('.btn-generate');
+        
+        if (form && submitBtn) {
+            form.addEventListener('submit', function() {
+                submitBtn.innerHTML = '<div class="spinner-border spinner-border-sm me-2" role="status"></div>Generating Video...';
+                submitBtn.disabled = true;
+            });
+        }
+    </script>
+</body>
+</html>
